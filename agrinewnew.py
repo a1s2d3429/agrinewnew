@@ -18,7 +18,7 @@ if identity == "消费者（购买用户）":
     st.header("🛒 消费者产品选购专区")
     st.subheader("全部富硒农产品介绍与售价（完整数据表）")
     # 保留原始完整数据表格
-    consumer_df = df[["产品名称", "产品品类", "产地", "单价（元/斤）", "富硒等级", "供货状态"]]
+    consumer_df = df[["产品名称", "产品分类", "产地", "单价", "富硒等级", "上市季节"]]
     st.dataframe(consumer_df, use_container_width=True)
 
     st.divider()
@@ -44,13 +44,13 @@ if identity == "消费者（购买用户）":
             st.subheader(f"【{product_name}】产品详情")
             # 自动从表格读取所有数据，以文字展示
             st.markdown(f"""
-            - 产品分类：{row['产品品类']}
+            - 产品分类：{row['产品分类']}
             - 原产地：{row['产地']}
-            - 零售单价：{row['单价（元/斤）']}
+            - 零售单价：{row['单价']}
             - 富硒品质等级：{row['富硒等级']}
-            - 最佳采购/上市时段：{row['供货状态']}
+            - 最佳采购/上市时段：{row['上市季节']}
             """)
-            st.info(f"选购说明：{product_name}产自赣州富硒土壤产区，天然富含硒元素，推荐在{row['供货状态']}采购，新鲜度更高。")
+            st.info(f"选购说明：{product_name}产自赣州富硒土壤产区，天然富含硒元素，推荐在{row['上市季节']}采购，新鲜度更高。")
         st.divider()
 
 # ---------------------- 2、经销商板块：全新筛选+成本测算+仓储提示完整功能 ----------------------
@@ -58,49 +58,49 @@ elif identity == "经销商（收购商）":
     st.header("🤝 经销商收购参考专区")
     st.subheader("全部富硒农产品产地、单价、供货销量明细")
     # 原有明细表格保留
-    dealer_df = df[["产品名称", "产品品类", "产地", "单价（元/斤）", "月度供货量"]]
+    dealer_df = df[["产品名称", "产品分类", "产地", "单价", "月度销量"]]
     st.dataframe(dealer_df, use_container_width=True)
     st.info("提示：本表展示各县域特色富硒单品，可筛选品类、价格匹配您的收购需求。")
 
     st.divider()
     st.subheader("🔍 货源精准筛选工具")
     # 品类筛选
-    pick_category = st.selectbox("筛选收购品类", ["全品类"] + df["产品品类"].unique().tolist())
+    pick_category = st.selectbox("筛选收购品类", ["全品类"] + df["产品分类"].unique().tolist())
     # 价格区间滑块
-    min_p = float(df["单价（元/斤）"].min())
-    max_p = float(df["单价（元/斤）"].max())
+    min_p = float(df["单价"].min())
+    max_p = float(df["单价"].max())
     low_price, high_price = st.slider("收购单价区间筛选", min_p, max_p, (min_p, max_p))
 
     # 筛选后数据
     filter_df = df.copy()
     if pick_category != "全品类":
-        filter_df = filter_df[filter_df["产品品类"] == pick_category]
-    filter_df = filter_df[(filter_df["单价（元/斤）"] >= low_price) & (filter_df["单价（元/斤）"] <= high_price)]
-    st.dataframe(filter_df[["产品名称", "产品品类", "产地", "单价（元/斤）", "月度供货量"]], use_container_width=True)
+        filter_df = filter_df[filter_df["产品分类"] == pick_category]
+    filter_df = filter_df[(filter_df["单价"] >= low_price) & (filter_df["单价"] <= high_price)]
+    st.dataframe(filter_df[["产品名称", "产品分类", "产地", "单价", "月度销量"]], use_container_width=True)
 
     st.divider()
     st.subheader("🧮 进货成本测算工具")
     pick_goods = st.selectbox("选择要采购的单品", filter_df["产品名称"].tolist())
     goods_data = filter_df[filter_df["产品名称"] == pick_goods].iloc[0]
     buy_jin = st.number_input("计划采购斤数", min_value=0, value=500)
-    all_cost = buy_jin * goods_data["单价（元/斤）"]
+    all_cost = buy_jin * goods_data["单价"]
     # 货源等级判断
-    if goods_data["月度供货量"] >= 1000:
+    if goods_data["月度销量"] >= 1000:
         supply_tip = "✅ 稳定大批量货源，适合长期批量收购"
-    elif goods_data["月度供货量"] >= 500:
+    elif goods_data["月度销量"] >= 500:
         supply_tip = "🟡 中等稳定货源，常规零售采购适配"
     else:
         supply_tip = "🟠 少量精品货源，适合高端精品渠道"
 
     st.success(f"""
-    单品：{pick_goods} | 产地：{goods_data['产地']} | 单价：{goods_data['单价（元/斤）']}元/斤
+    单品：{pick_goods} | 产地：{goods_data['产地']} | 单价：{goods_data['单价']}元/斤
     采购{buy_jin}斤总进货成本：{all_cost:.2f}元
     供货规模提示：{supply_tip}
     """)
 
     st.divider()
     st.subheader("📦 仓储进货小贴士")
-    if "茶叶" in goods_data["产品品类"] or "深加工类" in goods_data["产品品类"]:
+    if "茶叶" in goods_data["产品分类"] or "深加工类" in goods_data["产品分类"]:
         st.info("干货/深加工产品储存周期长，可趁货源充足时批量囤货，降低频繁运输成本")
     elif "新鲜蔬菜类" in goods_data["产品品类"]:
         st.warning("生鲜蔬菜保鲜周期短，建议按短期销量分批次少量收购，避免腐烂损耗")
@@ -114,8 +114,8 @@ elif identity == "农户（种植户）":
     st.header("👨‍🌾 农户种植参考专区")
     st.subheader("各县农产品月度总销量统计表（用来判断今年种什么更好卖）")
     # 原有销量统计表保留
-    farmer_data = df.groupby("产地")["月度供货量"].sum().reset_index()
-    farmer_data.columns = ["种植产地（县城）", "月度总销量"]
+    farmer_data = df.groupby("产地")["月度销量"].sum().reset_index()
+    farmer_data.columns = ["产地", "月度量"]
     st.dataframe(farmer_data, use_container_width=True)
     st.info("提示：表格里销量越高的县域品类，本地市场需求越大，优先规划种植，减少滞销风险。")
 
@@ -144,18 +144,18 @@ elif identity == "农户（种植户）":
     select_product = st.selectbox("选择您计划种植的产品", county_df["产品名称"].tolist())
     product_info = county_df[county_df["产品名称"] == select_product].iloc[0]
     plant_weight = st.number_input("预计种植产出多少斤", min_value=0, value=1000)
-    total_income = plant_weight * product_info["单价（元/斤）"]
+    total_income = plant_weight * product_info["单价"]
     st.success(f"""
-    品类：{select_product} | 本地零售价：{product_info['单价（元/斤）']}元/斤
+    品类：{select_product} | 本地零售价：{product_info['单价']}元/斤
     产出{plant_weight}斤预估总收入：{total_income:.2f} 元
     """)
 
     st.divider()
     st.subheader("🌱 本地种植科普建议")
-    category_sale = county_df.groupby("产品品类")["月度供货量"].sum().reset_index()
-    hot_category = category_sale.sort_values('月度供货量',ascending=False).iloc[0]['产品品类']
+    category_sale = county_df.groupby("产品分类")["月度销量"].sum().reset_index()
+    hot_category = category_sale.sort_values('月度供货量',ascending=False).iloc[0]['产品分类']
     st.markdown(f"""
     您所在{select_county}属于天然富硒土壤，产出农产品更容易达到优质富硒等级，收购溢价更高。
     本地热销品类：{hot_category}，市场需求最大。
-    该品类最佳上市供货时段：{product_info['供货状态']}，集中上市时收购商拿货量更高。
+    该品类最佳上市供货时段：{product_info['上市季节']}，集中上市时收购商拿货量更高。
     """)
